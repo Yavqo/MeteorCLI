@@ -1,6 +1,6 @@
 {
   "name": "sunlight-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Sunlight CLI: an AI coding agent in your terminal, powered by Yavqo AIHub.",
   "type": "module",
   "bin": { "sunlight": "dist/cli.js" },
@@ -11,7 +11,7 @@
     "release": "node scripts/release.mjs",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
-    "test": "npm run build && node --experimental-strip-types --test test/sunlight.test.mjs test/proxy.test.mjs test/install.test.mjs"
+    "test": "npm run build && node --experimental-strip-types --test test/sunlight.test.mjs test/features.test.mjs test/proxy.test.mjs test/install.test.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {

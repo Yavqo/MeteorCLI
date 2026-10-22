@@ -20,7 +20,26 @@ sunlight whoami     # account and token use
 sunlight logout
 ```
 
-- **Tools:** read, list, search, write, edit, run commands, fetch URLs. Anything that changes files, runs a command or uses the network asks first (`y` / `n` / `a` for always). `-y` approves everything.
+### Work on any folder with @
+
+```text
+› fix the failing tests in @~/code/api
++ ~/code/api added to your workspace
+› what does @src/auth.ts do?
++ src/auth.ts attached
+```
+
+- `@folder` adds the folder to your **workspace** and shows the AI its layout. `@file` attaches the file's contents. Tab completes paths. Write spaces as `\ ` (Tab does this for you) or quote the path: `@"~/My Folder"`.
+- Sunlight can read and change files inside your workspace folders: the folder you started in, plus any you added with `@`, `/add` or `--add-dir`. Anything **outside** them asks every time. That includes reads, and "always" doesn't apply. A symlink pointing outside doesn't count as inside.
+- `/undo` puts back every file the last request changed, and deletes files it created. Commands the AI ran can't be undone, and Sunlight tells you when a request ran any.
+
+### Also
+
+- **Tools:** read, list, find files, search, write, edit, run commands (in any workspace folder), fetch URLs. Changing files, running commands and network access ask first (`y` / `n` / `a` for always). `-y` approves everything.
+- **Input:** pasted text is sent as one message. End a line with `\` to keep typing on the next line.
+- **Replies** render markdown: bold, inline code, headings, bullets, and code blocks with a gutter. Piped output (`-p`) stays plain markdown.
+- **Long sessions** drop old tool output to stay under the size limit, and tell you once when they do. `/clear` starts fresh but keeps your folders.
+- **Commands:** `/add <folder>`, `/folders`, `/undo`, `/usage`, `/clear`, `/yes`, `/help`, `/exit`.
 - **Project notes:** put instructions in `SUNLIGHT.md` and Sunlight reads them at the start of each session.
 - **Session:** `~/.sunlight/auth.json` (mode 600) holds the Supabase session. The password is never stored.
 

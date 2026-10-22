@@ -1,4 +1,6 @@
 import type readline from "node:readline";
+import { MarkdownStream } from "./markdown.js";
+import { homePath } from "./paths.js";
 
 const useColor = !process.env.NO_COLOR && process.stdout.isTTY;
 const truecolor = /truecolor|24bit/i.test(process.env.COLORTERM ?? "");
@@ -76,19 +78,24 @@ export class Terminal {
   }
 
   banner(version: string, email: string | undefined, cwd: string) {
-    const home = process.env.HOME;
-    const shown = home && cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
+    const shown = homePath(cwd);
     this.write(`\n${c.sun("☀")} ${c.bold("Sunlight CLI")} ${c.dim(`v${version}`)}\n`);
     this.write(`  ${c.dim(`${email ?? "not signed in"} · ${shown}`)}\n`);
-    this.write(`  ${c.dim("/help for commands · ctrl+c to stop a reply")}\n`);
+    this.write(`  ${c.dim("@ to add a folder or file · /help for commands · ctrl+c to stop a reply")}\n`);
     if (!email) this.write(`\n  ${c.sun("Sign in with your Yavqo account:")} ${c.bold("sunlight login")}\n`);
     this.write("\n");
   }
 
-  toolLine(description: string) {
+  toolLine(description: string, outside = false) {
     this.stopSpinner();
     this.ensureNewline();
-    this.write(`${c.blue("●")} ${description}\n`);
+    this.write(`${c.blue("●")} ${description}${outside ? c.sun("  outside your folders") : ""}\n`);
+  }
+
+  /** Markdown styling for live replies; plain passthrough when piped or NO_COLOR. */
+  renderer(): { push(s: string): string; flush(): string } {
+    if (!useColor) return { push: (s) => s, flush: () => "" };
+    return new MarkdownStream({ bold: c.bold, code: c.blue, dim: c.dim });
   }
 
   toolResult(ok: boolean, summary: string) {
@@ -96,22 +103,25 @@ export class Terminal {
     this.write(`  ${ok ? c.green("✓") : c.red("✕")} ${c.dim(first)}\n`);
   }
 
-  async confirm(description: string, preview?: string): Promise<Decision> {
+  async confirm(description: string, preview?: string, outside = false): Promise<Decision> {
     this.stopSpinner();
     if (this.opts.autoApprove) return "yes";
     if (!this.opts.interactive || !this.rl) return "no";
     this.ensureNewline();
     this.write(`${c.sun("?")} Allow: ${c.bold(description)}\n`);
+    if (outside) this.write(`    ${c.sun("This is outside your workspace folders. Add the folder with @path to stop being asked.")}\n`);
     if (preview) {
       for (const line of preview.split("\n").slice(0, 24)) {
         const colored = line.startsWith("+ ") ? c.green(line) : line.startsWith("- ") ? c.red(line) : c.dim(line);
         this.write(`    ${colored}\n`);
       }
     }
-    const answer = await new Promise<string>((resolve) =>
-      this.rl!.question(`  ${c.dim("[y]es  [n]o  [a]lways this session")} › `, resolve),
-    );
+    // Outside the workspace there is no "always", and pressing Enter means no.
+    const options = outside ? "[y]es  [N]o" : "[Y]es  [n]o  [a]lways this session";
+    const answer = await new Promise<string>((resolve) => this.rl!.question(`  ${c.dim(options)} › `, resolve));
     const a = answer.trim().toLowerCase();
-    return a === "a" || a === "always" ? "always" : a === "y" || a === "yes" || a === "" ? "yes" : "no";
+    if (!outside && (a === "a" || a === "always")) return "always";
+    if (a === "y" || a === "yes") return "yes";
+    return a === "" && !outside ? "yes" : "no";
   }
 }
